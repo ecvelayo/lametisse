@@ -5,7 +5,8 @@ const employeeController = require('../controllers/employeeController.js');
 // router.get("/", employeeController.login);
 router.post("/in", employeeController.timeIn);
 router.get("/login", employeeController.login);
-router.get("/fillup", employeeController.fillUpDetails);
+router.get("/fillup", employeeController.fillUp);
+router.post("/fillup", employeeController.fillUpDetails)
 // router.post("/out", employeeController.timeOut);
 // router.post("/update", employeeController.update);
 // router.get("/user", employeeController.read);
