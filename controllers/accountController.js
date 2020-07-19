@@ -1,120 +1,142 @@
-const connection = require("../models/dbconnection");
 const instance = require("../models/AccountModel");
+const jwt = require("jsonwebtoken");
+const saltRounds = 10;
+const bcrypt = require("bcrypt");
 
+
+// exports.create = async (req, verifyToken, res) => {
+//     console.log(req.body);
+//     await instance.Account.create({admin_type: req.body.type, admin_user: req.body.username, admin_password: req.body.password});
+// }
+
+exports.retrieveByCode = async (req, res) => {
+    console.log(req.body)
+    let ret = await instance.Account.findAll({where:{code: req.query.code}});
+    console.log(ret);
+    res.send(ret);
+}
+
+// function verifyToken(req, res, next){
+//     const bearerHeader = req.headers['authorization'];
+//     if (typeof bearerHeader !== 'undefined'){
+//         const bearer = bearerHeader.split(' ');
+//         const bearerToken = bearer[1];
+//         req.token = bearerToken;
+//         next();
+//     }else{
+//         res.sendStatus(403);
+//     }
+// }
+
+exports.password = (password, res) => {
+    bcrypt.genSalt(saltRounds, function(err, salt) {
+        bcrypt.hash(password, salt, function(err, hash) {
+            console.log(hash);
+            return hash;
+        });
+    });
+}
+
+exports.decrypt = async (req, res) => {
+    bcrypt.compare("Testing", req.body.token, function(err, result){
+        res.send(result);
+    })
+}
 
 exports.create = async (req, res) => {
-    console.log(req.body);
-    await instance.User.create({admin_type: req.body.type, admin_user: req.body.username, admin_password: req.body.password});
+    const salt = bcrypt.genSaltSync(saltRounds);
+    const hash = bcrypt.hashSync(req.body.password, salt);
+    let ret = await instance.Account.create({
+        username: req.body.username,
+        password: hash,
+        email: req.body.email,
+        account_type: "USER",
+        company: req.body.company,
+        status: "pending",
+        position: req.body.position,
+        branch: req.body.branch,
+    })
+    res.send(ret)
 }
-// const columns = "(admin_type, code, admin_user, admin_password, created_at)";
-// const moment = require("moment");
-// const table = "dbo.MMT_Admin";
-// const now = moment().format("YYYY-MM-DD HH:mm:ss");
 
-// //using promises to connect to pool and query
-// exports.login = async (req,res) => {
-//     await connection.pool.connect().then(pool =>{
-//         return pool.query("SELECT * FROM "+table+" WHERE admin_user ='"+ req.body.username +"' AND admin_password = '"+req.body.password+"'");
-//     }).then(result =>{
-//         //manipulate result here
-//         res.send(result);
-//     }).then(()=>{
-//         return connection.pool.close();
-//     })
-// }
-// exports.loginUser = async (req, res) => {
-//     await connection.pool.connect().then(pool =>{
-//         console.log("SELECT * FROM "+table+" WHERE admin_user ='"+ req.body.username+"' AND admin_password='" + req.body.password +"' AND deleted_at = NULL")
-//         return pool.query("SELECT * FROM "+table+" WHERE admin_user ='"+ req.body.username+"' AND admin_password='" + req.body.password +"' AND deleted_at IS NULL");
-//     }).then(result =>{
-//         //manipulate result here
-//         console.log(result.recordset[0].admin_type);
-//         //employee user redirect
-//         if (result.rowsAffected == 1 && result.recordset[0].admin_type=="EMPLOYEE"){
-//             res.redirect("/employee/login?id="+result.recordset[0].code);
-//         }else{
-//             //admin user redirect
-//             res.send("Username and password does not match");
-//         }
-//     }).then(()=>{
-//         return connection.pool.close();
-//     })
-// }
+exports.login = async (req, res) => {
+    //testing, trial12345
+    let ret = await instance.Account.findOne({where: {username: req.body.username, deleted_at:null}});
+    if (bcrypt.compareSync(req.body.password, ret.password)){
+        //res.send("username and password correct");
+        const user = {
+            id: ret.id,
+            type: ret.type,
+            user: ret.username
+        };
+        const token = jwt.sign({user: user}, 'secretkey12345')
+        res.send({token: token, code: 200});
+    }else{
+        res.send("username and password incorrect");
+    }
+}
 
-// exports.create = async (req,res) => {
-//     console.log("Creating");
-//     await connection.pool.connect().then(pool => {
-//         return pool.query("SELECT * FROM "+table+" WHERE admin_user='"+req.body.username+"'");
-//     }).then(result =>{
-//         if (result.rowsAffected==1){
-//             res.send("Not unique")
-//             return "false"
-//         }else if (req.body.currentUser == "ADMIN"){
-//             let data = {};
-//             data.username = req.body.username;
-//             data.password = req.body.password;
-//             data.type = req.body.userType;
-//             data.created = moment().format("YYYY-MM-DD HH:mm:ss");
-//             data.deleted = null;
-//             //MSSQL Format
-//             data = "('"+data.type+"', NEWID(), '"+data.username+"','"+data.password+"',CONVERT(DATETIME, '"+data.created+"', 103))";
-//             create(data,table, res);
-//         }
-//     })
+// exports.create = async (req, res) => {
+//     const token = req.body.token;
+//     if (typeof req.body.token == 'undefined'){
+//         res.sendStatus(403);
+//     }else{
+//         payload = jwt.verify(token, 'secretkey12345')
+//     }
+//     if (payload.user == 'undefined'){
+//         res.sendStatus(403);
+//         res.send("Forbidden");
+//     }
+//     console.log(payload.user);
+//     res.sendStatus(200);
+//     console.log("Forbidden");
 // }
 
-// exports.approve = () => {
-//     //TODO: APPROVE EMPLOYEE REGISTRATION AND ELEVATE EMPLOYEE STATUS FROM NOT_VERIFIED TO VERIFIED
-// }
+exports.retrieveType = async (req, res) => {
+    console.log(req.user);
+    let ret = await instance.Account.findAll({
+        where:
+        {
+            username: req.username
+        }, 
+        attributes:['admin_type']
 
-// exports.createDepartment = () => {
-//     //TODO: CREATE DEPARTMENT AND ASSIGN PEOPLE PER DEPARTMENT
-// }
+    });
+    console.log(ret);
+    return(ret);
+}
 
-// exports.read = (req, res) => {
-//     read(req.body, table, res);
-// }
+exports.retrieveActive = async (req, res) => {
+    let ret = await instance.Account.findAll({where:{deletedAt: null}});
+    res.send(ret);
+}
 
-// exports.update = async (req, res) => {
-//     //route for update
-//     update(data);
-// }
+exports.retrieveByType = async (req, res) => {
+    let ret = await instance.Account.findAll({where:{admin_type: req.query.type }})
+    res.send(ret);
+}
 
-// create = async (data, table, res) => {
-//     console.log(data);
-//     await connection.pool.connect().then(pool =>{
-//         return pool.query("INSERT INTO "+table+" "+columns+" VALUES "+data);
-//     }).then(result=>{
-//         res.send(result);
-//     }).then(()=>{
-//         return connection.pool.close();
-//     }); 
-// }
+exports.deleteByCode = async (req, res) => {
+    let ret = await instance.Account.update({deletedAt: now},{where: {code: req.query.code}});
+    res.send(ret);
+}
 
-// read = async (data, table, res) => {
-//     console.log("Reading");
-//     await connection.pool.connect().then(pool =>{
-//         return pool.query("SELECT * FROM "+table+" WHERE deleted_at IS NULL AND code='"+data.code+"'")
-//     }).then(result=>{
-//         res.send(result)
-//     }).then(()=>{
-//         return connection.pool.close();
-//     })
-// }
+exports.updatePassword = async (req, res) => {
+    let ret = await instance.Account.update({admin_password: req.body.password, deletedAt: null}, {where: {code: req.body.code}});
+    res.send(ret);
+}
 
-// update = async (data) => {
-//     await connection.pool.connect().then(pool =>{
-//         //UPDATE PROFILE AND ACCOUNT DETAILS HERE
-//     })
-// }
-// //deleting accounts
-// exports.deleteAccount = async (req, res) => {
-//     await connection.pool.connect().then(pool =>{
-//         //DELETE PROFILE (SET DELETED_AT)
-//         return pool.query("UPDATE "+table+" SET deleted_at=CONVERT(DATETIME,'"+now+"', 103) WHERE code='"+req.body.code+"'");
-//     }).then(result=>{
-//         res.send(result.rowsAffected);
-//     }).then(()=>{
-//         connection.pool.close();
-//     })
+// exports.login = async (req, res) => {
+//     let ret = await instance.Account.findAll({where:{admin_user: req.body.user, admin_password: req.body.pass}});
+//     if (ret.length > 0){
+//         const user = {
+//             id: ret[0].dataValues.admin_id,
+//             type: ret[0].dataValues.admin_type,
+//             user: ret[0].dataValues.admin_user
+//         };
+//         const token = jwt.sign({user: user}, 'secretkey12345')
+//         return ({token: token});
+//     }else{
+//         return false;
+//     }
 // }

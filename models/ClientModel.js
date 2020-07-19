@@ -42,11 +42,10 @@ const Client = instance.sequelize.define("Client", {
         type: DataTypes.STRING,
         allowNull: false
     },
-    createdAt:"created_at",
-    updatedAt = "updated_at"
-
     },
     {
+        createdAt:"created_at",
+        updatedAt:"updated_at",
         tableName: "MMT_Client"
     },
 )

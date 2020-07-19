@@ -6,56 +6,52 @@ DataTypes.DATE.prototype._stringify = function _stringify(date, options) {
 };
 
 const Employee = instance.sequelize.define("Employee", {
-    employee_id:{
-        type: DataTypes.INTEGER,
+    id:{
+        type: DataTypes.BIGINT,
         primaryKey: true,
         autoIncrement: true,
     },
     code:{
         type: DataTypes.UUID,
     },
-    dept_id:{
-        type: DataTypes.INT,
-        allowNull: false
-    },
-    employee_fname: {
+    first_name: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    employee_midname:{
+    middle_name:{
         type: DataTypes.STRING,
         allowNull: false
     },
-    employee_lname:{
+    last_name:{
         type: DataTypes.STRING,
         allowNull: false
     },
-    employee_position: {
+    birthdate: {
+        type: DataTypes.DATE,
+        allowNull: false
+    },
+    contact_number: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    employee_department:{
+    address:{
         allowNull:false,
         type: DataTypes.STRING
     },
-    employee_email:{
+    sex:{
         type: DataTypes.STRING,
         allowNull: false,
     },
-    employee_birthdate:{
-        type: DataTypes.STRING,
+    deleted_at:{
+        type: DataTypes.DATE,
         allowNull: false
-    },
-    employee_contact:{
-        type: DataTypes.INTEGER,
-        allowNull: false
-    }, 
-    createdAt:"created_at",
-    updatedAt:"updated_at"
+    }
     },
     {
-        tableName: "MMT_Employee"
-    },
+        createdAt:"created_at",
+        updatedAt:"updated_at",
+        tableName: "MMT_Employees"
+    }
 )
 
 exports.Employee = Employee;

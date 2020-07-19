@@ -11,11 +11,11 @@ const Inventory = instance.sequelize.define("Inventory", {
         primaryKey: true,
         autoIncrement: true,
     },
-    product_id:{
-        type: DataTypes.STRING,
-        allowNull: false
-    },
     product_barcode:{
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    product_name:{
         type: DataTypes.STRING,
         allowNull: false
     },
@@ -27,11 +27,11 @@ const Inventory = instance.sequelize.define("Inventory", {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    createdAt: "created_at",
-    updatedAt: "updated_at"
     },
     {
-        tableName: "MMT_Inventory"
+        tableName: "MMT_Inventory",
+        createdAt: "created_at",
+        updatedAt: "updated_at"
     },
 )
 
